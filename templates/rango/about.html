@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About</title>
+</head>
+<body>
+    <h1>Rango says...</h1>
+    <p>Here is the about page.</p>
+
+    <!-- Link back to the index page -->
+    <a href="{% url 'index' %}">Back to Home</a>
+
+    <!-- Media image of Cat -->
+    <img src="{{ MEDIA_URL }}cat.jpg" alt="Picture of a Cat" />
+
+    <!-- Add author message -->
+    <p>This tutorial has been put together by {{ author_name }}.</p>
+</body>
+</html>

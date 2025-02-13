@@ -7,4 +7,7 @@ def index(request):
     return render(request, 'rango/index.html', context)
 
 def about(request):
-    return HttpResponse('Rango says here is the about page. <a href="/rango/">Index</a>')
+    context = {
+        'author_name': '2774255A',  # Replace this with your name if needed
+    }
+    return render(request, 'rango/about.html', context)  # Ensure 'about.html' is in the correct path

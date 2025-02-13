@@ -65,7 +65,6 @@ TEMPLATES = [
         'DIRS': [
             TEMPLATE_DIR,
         ],
-        
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
