@@ -1,39 +1,44 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from rango.models import Category, Page
-from rango.forms import CategoryForm, PageForm, UserForm, UserProfile
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse
-from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
+from datetime import datetime
+
+from rango.models import Category, Page
+from rango.forms import CategoryForm, PageForm, UserForm, UserProfile
 
 
-# Create your views here.
 def index(request):
-    category_list = Category.objects.order_by('-likes')[:5]  # Get the top 5 categories by likes
-    page_list = Page.objects.order_by('-views')[:5]  # Get the top 5 pages by views
+    visitor_cookie_handler(request)
+
+    category_list = Category.objects.order_by('-likes')[:5]
+    page_list = Page.objects.order_by('-views')[:5]
+
     context = {
-        'categories': category_list,  # Pass categories
-        'pages': page_list,  # Pass pages
-        'boldmessage': 'Crunchy, creamy, cookie, candy, cupcake!'  # Pass message
+        'categories': category_list,
+        'pages': page_list,
+        'visits': request.session.get('visits', 1),
     }
+
     return render(request, 'rango/index.html', context)
 
 
+
 def about(request):
-    print(request.method)
-    print(request.user)
-    return render(request, 'rango/about.html', {})
+    visitor_cookie_handler(request)
+    
+    context = {'visits': request.session.get('visits', 1)}
+    return render(request, 'rango/about.html', context)
 
 
 def show_category(request, category_name_slug):
-    category = Category.objects.get(slug=category_name_slug)
+    category = get_object_or_404(Category, slug=category_name_slug)
     pages = Page.objects.filter(category=category)
-    context = {
-        'category': category,
-        'pages': pages,
-    }
+
+    context = {'category': category, 'pages': pages}
     return render(request, 'rango/category.html', context)
+
 
 @login_required
 def add_category(request):
@@ -47,15 +52,10 @@ def add_category(request):
 
     return render(request, 'rango/add_category.html', {'form': form})
 
+
 @login_required
 def add_page(request, category_name_slug):
-    try:
-        category = Category.objects.get(slug=category_name_slug)
-    except Category.DoesNotExist:
-        category = None
-
-    if category is None:
-        return redirect('rango:index')
+    category = get_object_or_404(Category, slug=category_name_slug)
 
     if request.method == 'POST':
         form = PageForm(request.POST)
@@ -69,15 +69,13 @@ def add_page(request, category_name_slug):
 
     return render(request, 'rango/add_page.html', {'form': form, 'category': category})
 
-def get_category_list(current_category=None):
-    return {'categories': Category.objects.all(),
-    'current_category': current_category}
 
 def register(request):
     registered = False
+
     if request.method == 'POST':
         user_form = UserForm(data=request.POST)
-        profile_form = UserProfileForm(data=request.POST)
+        profile_form = UserProfile(data=request.POST)
 
         if user_form.is_valid() and profile_form.is_valid():
             user = user_form.save()
@@ -98,9 +96,11 @@ def register(request):
         user_form = UserForm()
         profile_form = UserProfile()
 
-    return render(request, 'rango/register.html', 
-                  {'user_form': user_form, 'profile_form': profile_form, 
-                   'registered': registered})
+    return render(
+        request, 'rango/register.html',
+        {'user_form': user_form, 'profile_form': profile_form, 'registered': registered}
+    )
+
 
 def user_login(request):
     if request.method == 'POST':
@@ -120,18 +120,37 @@ def user_login(request):
             return HttpResponse("Invalid login details supplied.")
     else:
         return render(request, 'rango/login.html', {})
-    
-def some_view(request):
-    if not request.user.is_authenticated:
-        return HttpResponse("You are not logged in.")
-    else:
-        return HttpResponse("You are logged in.")
-    
-@login_required
-def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text!")
+
 
 @login_required
 def user_logout(request):
     logout(request)
     return redirect(reverse('rango:index'))
+
+
+@login_required
+def restricted(request):
+    return render(request, 'rango/restricted.html')
+
+
+def get_category_list(current_category=None):
+    return {'categories': Category.objects.all(), 'current_category': current_category}
+
+
+def visitor_cookie_handler(request):
+    visits = request.session.get('visits', 1)
+    last_visit_str = request.session.get('last_visit', str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_str[:-7], '%Y-%m-%d %H:%M:%S')
+
+    if (datetime.now() - last_visit_time).days > 0:
+        visits += 1
+        request.session['last_visit'] = str(datetime.now())
+
+    request.session['visits'] = visits
+    request.session.modified = True  # 🔥 This ensures Django saves the session
+
+
+
+
+def get_server_side_cookie(request, cookie, default_val=None):
+    return request.session.get(cookie, default_val)
