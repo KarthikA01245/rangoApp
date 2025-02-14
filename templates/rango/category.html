@@ -1,0 +1,25 @@
+{% extends 'rango/base.html' %}
+
+{% block title_block %}
+    {% if category %}
+        {{ category.name }}
+    {% else %}
+        Unknown Category
+    {% endif %}
+{% endblock %}
+
+{% block body_block %}
+    <h1>{{ category.name }}</h1>
+    <p>Category Views: {{ category.views }} | Likes: {{ category.likes }}</p>
+
+    <ul>
+        {% for page in pages %}
+            <li><a href="{{ page.url }}" target="_blank">{{ page.title }}</a></li>
+        {% empty %}
+            <li>No pages in this category yet.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'rango:add_page' category.slug %}">Add a New Page</a>
+    <hr>
+    <a href="{% url 'rango:index' %}">Back to Home</a>
+{% endblock %}
