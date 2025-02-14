@@ -1,5 +1,4 @@
 {% extends 'rango/base.html' %}
-{% load static %}
 
 {% block title_block %}
     Homepage
@@ -36,11 +35,8 @@
         {% endif %}
     </div>
 
-    <div>
-        <a href="{% url 'rango:add_category' %}">Add a New Category</a><br />
-        <a href="{% url 'rango:about' %}">About</a><br />
-    </div>
-
+    {% load static %}
+    <!-- These links and images will only appear in the index page -->
     <div>
         <img src="{% static 'images/rango.jpg' %}" alt="Picture of Rango" />
     </div>
